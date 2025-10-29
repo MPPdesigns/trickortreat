@@ -520,37 +520,46 @@
 
                             <div className="legend">
                                 <div className="legend-item">
-                                    <div className="legend-box" style={{background: '#ffcc99'}}></div>
+                                    <div className="legend-box" style={{background: '#ff6b35'}}></div>
                                     <span>Full-Size (3 pieces)</span>
                                 </div>
                                 <div className="legend-item">
-                                    <div className="legend-box" style={{background: '#ffccff'}}></div>
+                                    <div className="legend-box" style={{background: '#e8b4b8'}}></div>
                                     <span>Fun-Size (1 piece)</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="map-container">
-                            <svg viewBox="-50 -50 550 950" className="map-svg">
+                            <svg viewBox="-50 -50 550 950" className="map-svg" style={{background: '#1a1a2e'}}>
                                 {/* Streets */}
-                                <rect x="50" y="-50" width="100" height="950" fill="#d3d3d3" stroke="#999" strokeWidth="1"/>
+                                <rect x="50" y="-50" width="100" height="950" fill="#4a4a4a" stroke="#666" strokeWidth="1"/>
                                 {[100, 250, 400, 550, 700].map(y => (
-                                    <rect key={y} x="-50" y={y-25} width="550" height="50" fill="#d3d3d3" stroke="#999" strokeWidth="1"/>
+                                    <rect key={y} x="-50" y={y-25} width="550" height="50" fill="#4a4a4a" stroke="#666" strokeWidth="1"/>
+                                ))}
+                                
+                                {/* Street center lines */}
+                                <line x1="100" y1="-50" x2="100" y2="900" stroke="#f4d03f" strokeWidth="2" strokeDasharray="10,10" opacity="0.7"/>
+                                {[100, 250, 400, 550, 700].map(y => (
+                                    <line key={`h${y}`} x1="-50" y1={y} x2="500" y2={y} stroke="#f4d03f" strokeWidth="2" strokeDasharray="10,10" opacity="0.7"/>
                                 ))}
 
-                                {/* Grid lines */}
+                                {/* Grid lines (subtle) */}
                                 {[0, 100, 200, 300, 400].map(x => (
-                                    <line key={`v${x}`} x1={x} y1="0" x2={x} y2="800" stroke="#ccc" strokeWidth="0.5" opacity="0.5"/>
+                                    <line key={`v${x}`} x1={x} y1="0" x2={x} y2="800" stroke="#3a3a3a" strokeWidth="0.5" opacity="0.3"/>
                                 ))}
                                 {[0, 100, 200, 300, 400, 500, 600, 700, 800].map(y => (
-                                    <line key={`h${y}`} x1="0" y1={y} x2="450" y2={y} stroke="#ccc" strokeWidth="0.5" opacity="0.5"/>
+                                    <line key={`h${y}`} x1="0" y1={y} x2="450" y2={y} stroke="#3a3a3a" strokeWidth="0.5" opacity="0.3"/>
                                 ))}
 
                                 {/* Houses */}
                                 {Object.entries(houses).map(([id, house]) => {
                                     const [x, y] = house.pos;
                                     const isClosed = house.remaining === 0 || time >= house.closesAt || house.visited;
-                                    const houseColor = house.type === 'full' ? '#ffcc99' : '#ffccff';
+                                    const houseColor = house.type === 'full' ? '#ff6b35' : '#e8b4b8';  // Orange for full-size, pink for fun-size
+                                    const roofColor = '#8b4513';
+                                    const doorColor = house.type === 'full' ? '#ffd700' : '#d4a5a5';
+                                    const windowColor = '#ffeb3b';
                                     const opacity = isClosed ? 0.3 : 1;
 
                                     return (
@@ -561,40 +570,40 @@
                                             opacity={opacity}
                                         >
                                             {/* House body */}
-                                            <rect x={x-15} y={y-6} width="30" height="21" fill={houseColor} stroke="#000" strokeWidth="2" rx="2"/>
+                                            <rect x={x-15} y={y-6} width="30" height="21" fill={houseColor} stroke="#2c2c2c" strokeWidth="2" rx="2"/>
                                             
                                             {/* Roof */}
-                                            <polygon points={`${x-20},${y-6} ${x},${y-16} ${x+20},${y-6}`} fill="#cc9966" stroke="#000" strokeWidth="2"/>
+                                            <polygon points={`${x-20},${y-6} ${x},${y-16} ${x+20},${y-6}`} fill={roofColor} stroke="#2c2c2c" strokeWidth="2"/>
                                             
                                             {/* Door */}
-                                            <rect x={x-3.5} y={y+5} width="7" height="10" fill="#ffff99" stroke="#000" strokeWidth="1"/>
+                                            <rect x={x-3.5} y={y+5} width="7" height="10" fill={doorColor} stroke="#2c2c2c" strokeWidth="1"/>
                                             
                                             {/* Windows */}
-                                            <rect x={x-12} y={y} width="5" height="5" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
-                                            <rect x={x+7} y={y} width="5" height="5" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
+                                            <rect x={x-12} y={y} width="5" height="5" fill={windowColor} stroke="#2c2c2c" strokeWidth="1"/>
+                                            <rect x={x+7} y={y} width="5" height="5" fill={windowColor} stroke="#2c2c2c" strokeWidth="1"/>
                                             
                                             {/* Star for full-size */}
                                             {house.type === 'full' && (
                                                 <polygon points={`${x},${y-23} ${x-3},${y-20} ${x-8},${y-20} ${x-3.5},${y-16} ${x-5},${y-9} ${x},${y-14} ${x+5},${y-9} ${x+3.5},${y-16} ${x+8},${y-20} ${x+3},${y-20}`} 
-                                                    fill="#ffff99" stroke="#000" strokeWidth="1.5"/>
+                                                    fill="#ffd700" stroke="#ff8c00" strokeWidth="1.5"/>
                                             )}
                                             
                                             {/* Label */}
-                                            <rect x={x-18} y={y-35} width="36" height="16" fill={houseColor} stroke="#000" strokeWidth="1" rx="3"/>
-                                            <text x={x} y={y-23} textAnchor="middle" fontSize="11" fontWeight="bold" fill="#000">{id}</text>
+                                            <rect x={x-18} y={y-35} width="36" height="16" fill="#2c2c2c" stroke={house.type === 'full' ? '#ffd700' : '#ffffff'} strokeWidth="1" rx="3"/>
+                                            <text x={x} y={y-23} textAnchor="middle" fontSize="11" fontWeight="bold" fill={house.type === 'full' ? '#ffd700' : '#ffffff'}>{id}</text>
                                             
                                             {/* Candy count */}
-                                            <text x={x} y={y-40} textAnchor="middle" fontSize="9" fill="#000" fontStyle="italic">
+                                            <text x={x} y={y-40} textAnchor="middle" fontSize="9" fill="#cccccc" fontStyle="italic">
                                                 {house.remaining} left
                                             </text>
                                             
                                             {/* Closes at */}
-                                            <text x={x} y={y-50} textAnchor="middle" fontSize="8" fill="#666">
+                                            <text x={x} y={y-50} textAnchor="middle" fontSize="8" fill="#888888">
                                                 Closes: {house.closesAt}m
                                             </text>
                                             
                                             {/* Collection time */}
-                                            <text x={x} y={y+25} textAnchor="middle" fontSize="8" fill="#000">
+                                            <text x={x} y={y+25} textAnchor="middle" fontSize="8" fill="#cccccc">
                                                 {house.collectTime} min
                                             </text>
                                         </g>
@@ -603,14 +612,30 @@
 
                                 {/* START house */}
                                 <g>
-                                    <rect x={START_POS[0]-20} y={START_POS[1]-8} width="40" height="28" fill="#ccffff" stroke="#000" strokeWidth="3" rx="2"/>
-                                    <polygon points={`${START_POS[0]-25},${START_POS[1]-8} ${START_POS[0]},${START_POS[1]-23} ${START_POS[0]+25},${START_POS[1]-8}`} fill="#cc9966" stroke="#000" strokeWidth="3"/>
-                                    <rect x={START_POS[0]-5} y={START_POS[1]+5} width="10" height="15" fill="#99ffff" stroke="#000" strokeWidth="1"/>
-                                    <rect x={START_POS[0]-15} y={START_POS[1]-1} width="7" height="7" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
-                                    <rect x={START_POS[0]+8} y={START_POS[1]-1} width="7" height="7" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
-                                    <rect x={START_POS[0]-25} y={START_POS[1]-50} width="50" height="20" fill="#ccffff" stroke="#000" strokeWidth="2" rx="5"/>
-                                    <text x={START_POS[0]} y={START_POS[1]-34} textAnchor="middle" fontSize="13" fontWeight="bold" fill="#000">START</text>
+                                    <rect x={START_POS[0]-20} y={START_POS[1]-8} width="40" height="28" fill="#4ecdc4" stroke="#2c2c2c" strokeWidth="3" rx="2"/>
+                                    <polygon points={`${START_POS[0]-25},${START_POS[1]-8} ${START_POS[0]},${START_POS[1]-23} ${START_POS[0]+25},${START_POS[1]-8}`} fill="#8b4513" stroke="#2c2c2c" strokeWidth="3"/>
+                                    <rect x={START_POS[0]-5} y={START_POS[1]+5} width="10" height="15" fill="#95e1d3" stroke="#2c2c2c" strokeWidth="1"/>
+                                    <rect x={START_POS[0]-15} y={START_POS[1]-1} width="7" height="7" fill="#ffeb3b" stroke="#2c2c2c" strokeWidth="1"/>
+                                    <rect x={START_POS[0]+8} y={START_POS[1]-1} width="7" height="7" fill="#ffeb3b" stroke="#2c2c2c" strokeWidth="1"/>
+                                    <rect x={START_POS[0]-25} y={START_POS[1]-50} width="50" height="20" fill="#2c2c2c" stroke="#4ecdc4" strokeWidth="2" rx="5"/>
+                                    <text x={START_POS[0]} y={START_POS[1]-34} textAnchor="middle" fontSize="13" fontWeight="bold" fill="#4ecdc4">START</text>
                                 </g>
+                                
+                                {/* Halloween decorations */}
+                                {/* Moon */}
+                                <circle cx="430" cy="20" r="35" fill="#f4f1de" stroke="#e0d5b7" strokeWidth="2" opacity="0.9"/>
+                                
+                                {/* Pumpkins */}
+                                <circle cx="50" cy="320" r="8" fill="#ff6b35" stroke="#8b4513" strokeWidth="2"/>
+                                <rect x="48.5" y="312" width="3" height="5" fill="#8b4513"/>
+                                <circle cx="420" cy="180" r="8" fill="#ff6b35" stroke="#8b4513" strokeWidth="2"/>
+                                <rect x="418.5" y="172" width="3" height="5" fill="#8b4513"/>
+                                
+                                {/* Trees */}
+                                <polygon points="20,500 30,475 40,500" fill="#2d5016" stroke="#1a3010" strokeWidth="1"/>
+                                <rect x="27" y="500" width="6" height="10" fill="#8b4513"/>
+                                <polygon points="440,650 450,625 460,650" fill="#2d5016" stroke="#1a3010" strokeWidth="1"/>
+                                <rect x="447" y="650" width="6" height="10" fill="#8b4513"/>
 
                                 {/* Player marker */}
                                 <g className="player-marker">
