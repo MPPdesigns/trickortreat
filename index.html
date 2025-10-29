@@ -350,7 +350,10 @@
                 const house = houses[houseId];
                 
                 // Check if house is available
-                if (house.remaining === 0 || time >= house.closesAt) {
+                if (house.remaining === 0 || time >= house.closesAt || house.visited) {
+                    if (house.visited) {
+                        alert("You've already visited this house!");
+                    }
                     return;
                 }
 
@@ -394,7 +397,17 @@
                 setCandyCount(candyCount + candyValue);
                 setWeight(weight + weightGain);
                 setRoute([...route, houseId]);
-                setGameState('playing');
+                
+                // Check if all houses are now unavailable
+                const anyAvailable = Object.values(updatedHouses).some(h => 
+                    h.remaining > 0 && newTime < h.closesAt && !h.visited
+                );
+                
+                if (!anyAvailable) {
+                    setGameState('ended');
+                } else {
+                    setGameState('playing');
+                }
             };
 
             // Restart game
@@ -536,7 +549,7 @@
                                 {/* Houses */}
                                 {Object.entries(houses).map(([id, house]) => {
                                     const [x, y] = house.pos;
-                                    const isClosed = house.remaining === 0 || time >= house.closesAt;
+                                    const isClosed = house.remaining === 0 || time >= house.closesAt || house.visited;
                                     const houseColor = house.type === 'full' ? '#ffcc99' : '#ffccff';
                                     const opacity = isClosed ? 0.3 : 1;
 
