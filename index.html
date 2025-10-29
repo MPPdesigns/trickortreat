@@ -103,11 +103,11 @@
         .house {
             cursor: pointer;
             transition: all 0.2s;
+            transform-origin: center;
         }
         
         .house:hover:not(.house-closed) {
-            filter: brightness(1.2);
-            transform: scale(1.1);
+            filter: brightness(1.2) drop-shadow(0 0 8px rgba(255, 107, 53, 0.6));
         }
         
         .house-closed {
