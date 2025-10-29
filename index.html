@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halloween Trick-or-Treating Optimization Game</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .game-header h1 {
+            font-size: 2.5em;
+            margin: 10px 0;
+            color: #ff6b35;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .game-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        
+        .map-container {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        .status-panel {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #ff6b35;
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .status-section:last-child {
+            border-bottom: none;
+        }
+        
+        .status-section h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b35;
+            font-size: 1.2em;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 1.1em;
+        }
+        
+        .stat-label {
+            color: #aaa;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .stat-value.warning {
+            color: #ff6b35;
+        }
+        
+        .map-svg {
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+        }
+        
+        .house {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .house:hover:not(.house-closed) {
+            filter: brightness(1.2);
+            transform: scale(1.1);
+        }
+        
+        .house-closed {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .player-marker {
+            transition: all 0.5s ease-in-out;
+        }
+        
+        .collecting-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .collecting-message {
+            background: linear-gradient(135deg, #ff6b35, #ff8c42);
+            padding: 40px 60px;
+            border-radius: 20px;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0 10px 50px rgba(255, 107, 53, 0.5);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .end-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.5s;
+        }
+        
+        .end-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 3px solid #ff6b35;
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(255, 107, 53, 0.3);
+        }
+        
+        .end-content h2 {
+            font-size: 3em;
+            margin: 0 0 20px 0;
+            color: #ff6b35;
+        }
+        
+        .final-score {
+            font-size: 4em;
+            font-weight: bold;
+            color: #ffd700;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        .route-display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .route-display h3 {
+            color: #ff6b35;
+            margin-top: 0;
+        }
+        
+        .route-path {
+            font-family: monospace;
+            font-size: 1.2em;
+            line-height: 1.8;
+            color: #fff;
+        }
+        
+        .restart-button {
+            background: linear-gradient(135deg, #ff6b35, #ff8c42);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        
+        .restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.5);
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // House data
+        const INITIAL_HOUSES = {
+            H1: { pos: [100, 700], type: 'fun', initial: 15, collectTime: 2, closesAt: 75 },
+            H2: { pos: [300, 700], type: 'full', initial: 8, collectTime: 3, closesAt: 60 },
+            H3: { pos: [150, 550], type: 'fun', initial: 20, collectTime: 2, closesAt: 90 },
+            H4: { pos: [350, 550], type: 'fun', initial: 12, collectTime: 2, closesAt: 45 },
+            H5: { pos: [100, 400], type: 'full', initial: 6, collectTime: 3, closesAt: 90 },
+            H6: { pos: [400, 400], type: 'fun', initial: 18, collectTime: 2, closesAt: 70 },
+            H7: { pos: [200, 250], type: 'fun', initial: 25, collectTime: 2, closesAt: 90 },
+            H8: { pos: [350, 250], type: 'full', initial: 5, collectTime: 3, closesAt: 50 },
+            H9: { pos: [100, 100], type: 'fun', initial: 10, collectTime: 2, closesAt: 40 },
+            H10: { pos: [300, 100], type: 'fun', initial: 15, collectTime: 2, closesAt: 90 },
+            H11: { pos: [400, 0], type: 'full', initial: 7, collectTime: 3, closesAt: 65 },
+        };
+
+        const START_POS = [200, 800];
+        const WALKING_SPEED = 60; // m/min
+        const TIME_LIMIT = 90; // minutes
+
+        function App() {
+            const [gameState, setGameState] = useState('playing'); // playing, collecting, ended
+            const [playerPos, setPlayerPos] = useState(START_POS);
+            const [time, setTime] = useState(0);
+            const [candyCount, setCandyCount] = useState(0);
+            const [weight, setWeight] = useState(0);
+            const [route, setRoute] = useState(['START']);
+            const [houses, setHouses] = useState(() => {
+                const initialState = {};
+                Object.entries(INITIAL_HOUSES).forEach(([id, data]) => {
+                    initialState[id] = {
+                        ...data,
+                        remaining: data.initial,
+                        visited: false,
+                        lastUpdateTime: 0
+                    };
+                });
+                return initialState;
+            });
+
+            // Calculate efficiency based on weight
+            const efficiency = Math.max(0, 1 - 0.0015 * weight);
+            const currentSpeed = WALKING_SPEED * efficiency;
+
+            // Calculate distance between two points
+            const distance = (pos1, pos2) => {
+                const dx = pos2[0] - pos1[0];
+                const dy = pos2[1] - pos1[1];
+                return Math.sqrt(dx * dx + dy * dy);
+            };
+
+            // Update house inventories based on elapsed time
+            const updateHouseInventories = (currentTime) => {
+                const updatedHouses = { ...houses };
+                Object.entries(updatedHouses).forEach(([id, house]) => {
+                    const timeSinceUpdate = currentTime - house.lastUpdateTime;
+                    const depletionAmount = Math.floor(timeSinceUpdate / house.collectTime);
+                    updatedHouses[id].remaining = Math.max(0, house.remaining - depletionAmount);
+                    updatedHouses[id].lastUpdateTime = currentTime;
+                });
+                return updatedHouses;
+            };
+
+            // Check if game should end
+            useEffect(() => {
+                if (time >= TIME_LIMIT) {
+                    setGameState('ended');
+                }
+                
+                // Check if all houses are closed
+                const allClosed = Object.values(houses).every(house => 
+                    house.remaining === 0 || time >= house.closesAt
+                );
+                if (allClosed && gameState === 'playing') {
+                    setGameState('ended');
+                }
+            }, [time, houses, gameState]);
+
+            // Handle house click
+            const handleHouseClick = async (houseId) => {
+                if (gameState !== 'playing') return;
+                
+                const house = houses[houseId];
+                
+                // Check if house is available
+                if (house.remaining === 0 || time >= house.closesAt) {
+                    return;
+                }
+
+                // Calculate travel time
+                const dist = distance(playerPos, house.pos);
+                const travelTime = dist / currentSpeed;
+                const newTime = time + travelTime + house.collectTime;
+
+                // Check if we'd exceed time limit
+                if (newTime > TIME_LIMIT) {
+                    alert(`Not enough time! This trip would take ${travelTime.toFixed(1)} min to travel + ${house.collectTime} min to collect = ${(travelTime + house.collectTime).toFixed(1)} min total. You only have ${(TIME_LIMIT - time).toFixed(1)} min remaining.`);
+                    return;
+                }
+
+                // Check if house will be closed by the time we arrive
+                if (time + travelTime >= house.closesAt) {
+                    alert(`This house will be closed by the time you arrive! It closes at ${house.closesAt} min, and you'd arrive at ${(time + travelTime).toFixed(1)} min.`);
+                    return;
+                }
+
+                // Start collecting animation
+                setGameState('collecting');
+
+                // Wait 3 seconds
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Update house inventories based on time elapsed
+                const updatedHouses = updateHouseInventories(newTime);
+
+                // Collect candy from clicked house
+                const candyValue = house.type === 'full' ? 3 : 1;
+                const weightGain = house.type === 'full' ? 3 : 1;
+
+                updatedHouses[houseId].remaining = Math.max(0, updatedHouses[houseId].remaining - 1);
+                updatedHouses[houseId].visited = true;
+
+                // Update game state
+                setHouses(updatedHouses);
+                setPlayerPos(house.pos);
+                setTime(newTime);
+                setCandyCount(candyCount + candyValue);
+                setWeight(weight + weightGain);
+                setRoute([...route, houseId]);
+                setGameState('playing');
+            };
+
+            // Restart game
+            const restartGame = () => {
+                setGameState('playing');
+                setPlayerPos(START_POS);
+                setTime(0);
+                setCandyCount(0);
+                setWeight(0);
+                setRoute(['START']);
+                
+                const initialState = {};
+                Object.entries(INITIAL_HOUSES).forEach(([id, data]) => {
+                    initialState[id] = {
+                        ...data,
+                        remaining: data.initial,
+                        visited: false,
+                        lastUpdateTime: 0
+                    };
+                });
+                setHouses(initialState);
+            };
+
+            return (
+                <div className="game-container">
+                    <div className="game-header">
+                        <h1>🎃 Halloween Trick-or-Treating Optimization 🎃</h1>
+                    </div>
+
+                    {gameState === 'collecting' && (
+                        <div className="collecting-overlay">
+                            <div className="collecting-message">
+                                🍬 Collecting Candy... 🍬
+                            </div>
+                        </div>
+                    )}
+
+                    {gameState === 'ended' && (
+                        <div className="end-screen">
+                            <div className="end-content">
+                                <h2>Game Over!</h2>
+                                <div className="final-score">
+                                    {candyCount} pieces
+                                </div>
+                                <p style={{fontSize: '1.2em', margin: '10px 0'}}>
+                                    Time Used: {time.toFixed(1)} / {TIME_LIMIT} minutes
+                                </p>
+                                <div className="route-display">
+                                    <h3>Your Route:</h3>
+                                    <div className="route-path">
+                                        {route.join(' → ')}
+                                    </div>
+                                    <div style={{marginTop: '15px', fontSize: '0.9em', color: '#aaa'}}>
+                                        Houses visited: {route.length - 1} / {Object.keys(INITIAL_HOUSES).length}
+                                    </div>
+                                </div>
+                                <button className="restart-button" onClick={restartGame}>
+                                    🎃 Play Again 🎃
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="game-layout">
+                        <div className="status-panel">
+                            <div className="status-section">
+                                <h3>⏰ Time</h3>
+                                <div className="stat-row">
+                                    <span className="stat-label">Elapsed:</span>
+                                    <span className="stat-value">{time.toFixed(1)} min</span>
+                                </div>
+                                <div className="stat-row">
+                                    <span className="stat-label">Remaining:</span>
+                                    <span className={`stat-value ${TIME_LIMIT - time < 20 ? 'warning' : ''}`}>
+                                        {(TIME_LIMIT - time).toFixed(1)} min
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="status-section">
+                                <h3>🍬 Candy</h3>
+                                <div className="stat-row">
+                                    <span className="stat-label">Total Pieces:</span>
+                                    <span className="stat-value">{candyCount}</span>
+                                </div>
+                                <div className="stat-row">
+                                    <span className="stat-label">Weight:</span>
+                                    <span className="stat-value">{weight} units</span>
+                                </div>
+                            </div>
+
+                            <div className="status-section">
+                                <h3>🏃 Movement</h3>
+                                <div className="stat-row">
+                                    <span className="stat-label">Efficiency:</span>
+                                    <span className={`stat-value ${efficiency < 0.5 ? 'warning' : ''}`}>
+                                        {(efficiency * 100).toFixed(1)}%
+                                    </span>
+                                </div>
+                                <div className="stat-row">
+                                    <span className="stat-label">Speed:</span>
+                                    <span className="stat-value">{currentSpeed.toFixed(1)} m/min</span>
+                                </div>
+                            </div>
+
+                            <div className="instructions">
+                                <strong>How to Play:</strong><br/>
+                                Click on houses to collect candy! Watch your weight—it slows you down. Houses run out of candy and close over time.
+                            </div>
+
+                            <div className="legend">
+                                <div className="legend-item">
+                                    <div className="legend-box" style={{background: '#ffcc99'}}></div>
+                                    <span>Full-Size (3 pieces)</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-box" style={{background: '#ffccff'}}></div>
+                                    <span>Fun-Size (1 piece)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="map-container">
+                            <svg viewBox="-50 -50 550 950" className="map-svg">
+                                {/* Streets */}
+                                <rect x="50" y="-50" width="100" height="950" fill="#d3d3d3" stroke="#999" strokeWidth="1"/>
+                                {[100, 250, 400, 550, 700].map(y => (
+                                    <rect key={y} x="-50" y={y-25} width="550" height="50" fill="#d3d3d3" stroke="#999" strokeWidth="1"/>
+                                ))}
+
+                                {/* Grid lines */}
+                                {[0, 100, 200, 300, 400].map(x => (
+                                    <line key={`v${x}`} x1={x} y1="0" x2={x} y2="800" stroke="#ccc" strokeWidth="0.5" opacity="0.5"/>
+                                ))}
+                                {[0, 100, 200, 300, 400, 500, 600, 700, 800].map(y => (
+                                    <line key={`h${y}`} x1="0" y1={y} x2="450" y2={y} stroke="#ccc" strokeWidth="0.5" opacity="0.5"/>
+                                ))}
+
+                                {/* Houses */}
+                                {Object.entries(houses).map(([id, house]) => {
+                                    const [x, y] = house.pos;
+                                    const isClosed = house.remaining === 0 || time >= house.closesAt;
+                                    const houseColor = house.type === 'full' ? '#ffcc99' : '#ffccff';
+                                    const opacity = isClosed ? 0.3 : 1;
+
+                                    return (
+                                        <g 
+                                            key={id} 
+                                            className={`house ${isClosed ? 'house-closed' : ''}`}
+                                            onClick={() => handleHouseClick(id)}
+                                            opacity={opacity}
+                                        >
+                                            {/* House body */}
+                                            <rect x={x-15} y={y-6} width="30" height="21" fill={houseColor} stroke="#000" strokeWidth="2" rx="2"/>
+                                            
+                                            {/* Roof */}
+                                            <polygon points={`${x-20},${y-6} ${x},${y-16} ${x+20},${y-6}`} fill="#cc9966" stroke="#000" strokeWidth="2"/>
+                                            
+                                            {/* Door */}
+                                            <rect x={x-3.5} y={y+5} width="7" height="10" fill="#ffff99" stroke="#000" strokeWidth="1"/>
+                                            
+                                            {/* Windows */}
+                                            <rect x={x-12} y={y} width="5" height="5" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
+                                            <rect x={x+7} y={y} width="5" height="5" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
+                                            
+                                            {/* Star for full-size */}
+                                            {house.type === 'full' && (
+                                                <polygon points={`${x},${y-23} ${x-3},${y-20} ${x-8},${y-20} ${x-3.5},${y-16} ${x-5},${y-9} ${x},${y-14} ${x+5},${y-9} ${x+3.5},${y-16} ${x+8},${y-20} ${x+3},${y-20}`} 
+                                                    fill="#ffff99" stroke="#000" strokeWidth="1.5"/>
+                                            )}
+                                            
+                                            {/* Label */}
+                                            <rect x={x-18} y={y-35} width="36" height="16" fill={houseColor} stroke="#000" strokeWidth="1" rx="3"/>
+                                            <text x={x} y={y-23} textAnchor="middle" fontSize="11" fontWeight="bold" fill="#000">{id}</text>
+                                            
+                                            {/* Candy count */}
+                                            <text x={x} y={y-40} textAnchor="middle" fontSize="9" fill="#000" fontStyle="italic">
+                                                {house.remaining} left
+                                            </text>
+                                            
+                                            {/* Closes at */}
+                                            <text x={x} y={y-50} textAnchor="middle" fontSize="8" fill="#666">
+                                                Closes: {house.closesAt}m
+                                            </text>
+                                            
+                                            {/* Collection time */}
+                                            <text x={x} y={y+25} textAnchor="middle" fontSize="8" fill="#000">
+                                                {house.collectTime} min
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+
+                                {/* START house */}
+                                <g>
+                                    <rect x={START_POS[0]-20} y={START_POS[1]-8} width="40" height="28" fill="#ccffff" stroke="#000" strokeWidth="3" rx="2"/>
+                                    <polygon points={`${START_POS[0]-25},${START_POS[1]-8} ${START_POS[0]},${START_POS[1]-23} ${START_POS[0]+25},${START_POS[1]-8}`} fill="#cc9966" stroke="#000" strokeWidth="3"/>
+                                    <rect x={START_POS[0]-5} y={START_POS[1]+5} width="10" height="15" fill="#99ffff" stroke="#000" strokeWidth="1"/>
+                                    <rect x={START_POS[0]-15} y={START_POS[1]-1} width="7" height="7" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
+                                    <rect x={START_POS[0]+8} y={START_POS[1]-1} width="7" height="7" fill="#ffffcc" stroke="#000" strokeWidth="1"/>
+                                    <rect x={START_POS[0]-25} y={START_POS[1]-50} width="50" height="20" fill="#ccffff" stroke="#000" strokeWidth="2" rx="5"/>
+                                    <text x={START_POS[0]} y={START_POS[1]-34} textAnchor="middle" fontSize="13" fontWeight="bold" fill="#000">START</text>
+                                </g>
+
+                                {/* Player marker */}
+                                <g className="player-marker">
+                                    <circle cx={playerPos[0]} cy={playerPos[1]} r="8" fill="#ff6b35" stroke="#000" strokeWidth="2"/>
+                                    <circle cx={playerPos[0]} cy={playerPos[1]} r="4" fill="#ffd700"/>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
