@@ -344,18 +344,41 @@
 
             // Check if game should end
             useEffect(() => {
+                if (gameState !== 'playing') return;
+                
                 if (time >= TIME_LIMIT) {
                     setGameState('ended');
+                    return;
                 }
                 
-                // Check if all houses are closed
-                const allClosed = Object.values(houses).every(house => 
-                    house.remaining === 0 || time >= house.closesAt
-                );
-                if (allClosed && gameState === 'playing') {
+                // Check if any houses have valid moves remaining
+                const hasValidMoves = Object.entries(houses).some(([id, house]) => {
+                    // Skip if already visited
+                    if (house.visited) return false;
+                    
+                    // Calculate if we can reach this house
+                    const dist = distance(playerPos, house.pos);
+                    const travelTime = dist / currentSpeed;
+                    const arrivalTime = time + travelTime;
+                    const completionTime = arrivalTime + house.collectTime;
+                    
+                    // Check all constraints
+                    const hasTime = completionTime <= TIME_LIMIT;
+                    const notClosed = arrivalTime < house.closesAt;
+                    
+                    // Simulate inventory at arrival
+                    const timeSinceUpdate = arrivalTime - house.lastUpdateTime;
+                    const depletionAmount = Math.floor(timeSinceUpdate / house.collectTime);
+                    const remainingAtArrival = Math.max(0, house.remaining - depletionAmount);
+                    const hasCandy = remainingAtArrival > 0;
+                    
+                    return hasTime && notClosed && hasCandy;
+                });
+                
+                if (!hasValidMoves) {
                     setGameState('ended');
                 }
-            }, [time, houses, gameState]);
+            }, [time, houses, gameState, playerPos, currentSpeed]);
 
             // Handle house click
             const handleHouseClick = async (houseId) => {
@@ -400,6 +423,14 @@
                 setHouses(housesAtArrival);
                 setTime(arrivalTime);
                 setPlayerPos(house.pos);
+                
+                // Check if any houses are still available after this travel
+                const availableAfterTravel = Object.entries(housesAtArrival).some(([id, h]) => 
+                    h.remaining > 0 && arrivalTime < h.closesAt && !h.visited && id !== houseId
+                );
+                
+                // If no houses available after travel (but before collection), end game after this collection
+                const shouldEndAfterCollection = !availableAfterTravel;
 
                 // Start collecting animation
                 setGameState('collecting');
@@ -424,12 +455,12 @@
                 setWeight(weight + weightGain);
                 setRoute([...route, houseId]);
                 
-                // Check if all houses are now unavailable
+                // Check if all houses are now unavailable or if we flagged game should end
                 const anyAvailable = Object.values(updatedHouses).some(h => 
                     h.remaining > 0 && newTime < h.closesAt && !h.visited
                 );
                 
-                if (!anyAvailable) {
+                if (!anyAvailable || shouldEndAfterCollection) {
                     setGameState('ended');
                 } else {
                     setGameState('playing');
