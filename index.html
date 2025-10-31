@@ -301,6 +301,7 @@
 
         function App() {
             const [gameState, setGameState] = useState('playing'); // playing, collecting, ended
+            const [endReason, setEndReason] = useState(''); // Why the game ended
             const [playerPos, setPlayerPos] = useState(START_POS);
             const [time, setTime] = useState(0);
             const [candyCount, setCandyCount] = useState(0);
@@ -347,6 +348,7 @@
                 if (gameState !== 'playing') return;
                 
                 if (time >= TIME_LIMIT) {
+                    setEndReason("You ran out of time!");
                     setGameState('ended');
                     return;
                 }
@@ -376,6 +378,31 @@
                 });
                 
                 if (!hasValidMoves) {
+                    // Determine WHY there are no valid moves
+                    const allVisited = Object.values(houses).every(h => h.visited);
+                    const allClosed = Object.values(houses).every(h => h.visited || time >= h.closesAt);
+                    const allEmpty = Object.values(houses).every(h => {
+                        if (h.visited) return true;
+                        const dist = distance(playerPos, h.pos);
+                        const travelTime = dist / currentSpeed;
+                        const arrivalTime = time + travelTime;
+                        const timeSinceUpdate = arrivalTime - h.lastUpdateTime;
+                        const depletionAmount = Math.floor(timeSinceUpdate / h.collectTime);
+                        const remainingAtArrival = Math.max(0, h.remaining - depletionAmount);
+                        return remainingAtArrival === 0;
+                    });
+                    
+                    // Set appropriate message
+                    if (allVisited) {
+                        setEndReason("You visited every available house!");
+                    } else if (allEmpty) {
+                        setEndReason("The neighborhood is out of candy!");
+                    } else if (allClosed) {
+                        setEndReason("All the porch lights are out!");
+                    } else {
+                        setEndReason("No more houses are reachable!");
+                    }
+                    
                     setGameState('ended');
                 }
             }, [time, houses, gameState, playerPos, currentSpeed]);
@@ -461,6 +488,15 @@
                 );
                 
                 if (!anyAvailable || shouldEndAfterCollection) {
+                    // Set reason if not already set
+                    if (!endReason) {
+                        const allVisited = Object.values(updatedHouses).every(h => h.visited);
+                        if (allVisited) {
+                            setEndReason("You visited every house!");
+                        } else {
+                            setEndReason("No more houses are available!");
+                        }
+                    }
                     setGameState('ended');
                 } else {
                     setGameState('playing');
@@ -470,6 +506,7 @@
             // Restart game
             const restartGame = () => {
                 setGameState('playing');
+                setEndReason('');
                 setPlayerPos(START_POS);
                 setTime(0);
                 setCandyCount(0);
@@ -506,6 +543,11 @@
                         <div className="end-screen">
                             <div className="end-content">
                                 <h2>Game Over!</h2>
+                                {endReason && (
+                                    <p style={{fontSize: '1.1em', color: '#ff6b35', fontWeight: 'bold', margin: '10px 0'}}>
+                                        {endReason}
+                                    </p>
+                                )}
                                 <div className="final-score">
                                     {candyCount} pieces
                                 </div>
