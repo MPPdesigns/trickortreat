@@ -349,18 +349,17 @@
                 
                 const house = houses[houseId];
                 
-                // Check if house is available
-                if (house.remaining === 0 || time >= house.closesAt || house.visited) {
-                    if (house.visited) {
-                        alert("You've already visited this house!");
-                    }
+                // Check if house was already visited
+                if (house.visited) {
+                    alert("You've already visited this house!");
                     return;
                 }
 
                 // Calculate travel time
                 const dist = distance(playerPos, house.pos);
                 const travelTime = dist / currentSpeed;
-                const newTime = time + travelTime + house.collectTime;
+                const arrivalTime = time + travelTime;
+                const newTime = arrivalTime + house.collectTime;
 
                 // Check if we'd exceed time limit
                 if (newTime > TIME_LIMIT) {
@@ -369,8 +368,17 @@
                 }
 
                 // Check if house will be closed by the time we arrive
-                if (time + travelTime >= house.closesAt) {
-                    alert(`This house will be closed by the time you arrive! It closes at ${house.closesAt} min, and you'd arrive at ${(time + travelTime).toFixed(1)} min.`);
+                if (arrivalTime >= house.closesAt) {
+                    alert(`This house will be closed by the time you arrive! It closes at ${house.closesAt} min, and you'd arrive at ${arrivalTime.toFixed(1)} min.`);
+                    return;
+                }
+
+                // CRITICAL FIX: Update inventories to ARRIVAL time first
+                const housesAtArrival = updateHouseInventories(arrivalTime);
+                
+                // NOW check if house has candy when we arrive
+                if (housesAtArrival[houseId].remaining === 0) {
+                    alert(`This house will be out of candy by the time you arrive! It had candy now, but will run out before you get there.`);
                     return;
                 }
 
@@ -380,7 +388,7 @@
                 // Wait 3 seconds
                 await new Promise(resolve => setTimeout(resolve, 3000));
 
-                // Update house inventories based on time elapsed
+                // Update house inventories to final time (after collection)
                 const updatedHouses = updateHouseInventories(newTime);
 
                 // Collect candy from clicked house
