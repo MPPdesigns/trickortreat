@@ -387,14 +387,19 @@
                     return;
                 }
 
-                // CRITICAL FIX: Update inventories to ARRIVAL time first
+                // CRITICAL: Update inventories to ARRIVAL time AND update state immediately
                 const housesAtArrival = updateHouseInventories(arrivalTime);
                 
-                // NOW check if house has candy when we arrive
+                // Check if house has candy when we arrive
                 if (housesAtArrival[houseId].remaining === 0) {
                     alert(`This house will be out of candy by the time you arrive! It had candy now, but will run out before you get there.`);
                     return;
                 }
+
+                // Update the display immediately to show arrival state
+                setHouses(housesAtArrival);
+                setTime(arrivalTime);
+                setPlayerPos(house.pos);
 
                 // Start collecting animation
                 setGameState('collecting');
@@ -412,9 +417,8 @@
                 updatedHouses[houseId].remaining = Math.max(0, updatedHouses[houseId].remaining - 1);
                 updatedHouses[houseId].visited = true;
 
-                // Update game state
+                // Update game state with final values
                 setHouses(updatedHouses);
-                setPlayerPos(house.pos);
                 setTime(newTime);
                 setCandyCount(candyCount + candyValue);
                 setWeight(weight + weightGain);
