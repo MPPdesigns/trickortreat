@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Halloween Trick-or-Treating Optimization Game</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -38,6 +38,20 @@
             display: flex;
             gap: 20px;
             align-items: flex-start;
+        }
+        
+        @media (max-width: 768px) {
+            .game-layout {
+                flex-direction: column-reverse;
+            }
+            
+            .status-panel {
+                width: 100%;
+            }
+            
+            .game-header h1 {
+                font-size: 1.5em;
+            }
         }
         
         .map-container {
